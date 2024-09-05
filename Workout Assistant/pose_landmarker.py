@@ -6,7 +6,7 @@ from mediapipe.tasks.python import vision
 import numpy as np
 import cv2 as cv
 import math
-from flask import Flask, Response
+from flask import Flask, Response, jsonify
 
 app = Flask(__name__)
 
@@ -89,9 +89,13 @@ class PoseLandmarker:
             sum += left_arm_percent
         if right_arm_percent >= 0:
             sum += right_arm_percent
-            return sum / 2
+            response = jsonify({'efficiency': sum / 2})
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         
-        return sum
+        response = jsonify({'efficiency': sum})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     
     # RETURNS SQUAT EFFICIENCY %
     @app.route('/getSquat')
@@ -128,9 +132,13 @@ class PoseLandmarker:
             sum += left_leg_percent
         if right_leg_percent >= 0:
             sum += right_leg_percent
-            return sum / 2
+            response = jsonify({'efficiency': sum / 2})
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         
-        return sum
+        response = jsonify({'efficiency': sum})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
     # RETURNS PULLUP EFFICIENCY %
     @app.route('/getPullup')
@@ -167,9 +175,13 @@ class PoseLandmarker:
             sum += left_arm_percent
         if right_arm_percent >= 0:
             sum += right_arm_percent
-            return sum / 2
+            response = jsonify({'efficiency': sum / 2})
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         
-        return sum
+        response = jsonify({'efficiency': sum})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     
     def clamp_value(self, value, min, max):
         if (value > max):
@@ -213,7 +225,8 @@ def load_frames():
 
 @app.route('/getFeed')
 def get_video():
-    return Response(load_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
+    response = Response(load_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 if __name__ == "__main__":
     app.run(debug=True)

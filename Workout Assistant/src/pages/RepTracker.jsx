@@ -1,22 +1,29 @@
 "use client"
 
 import { useEffect, useRef, useState,  } from 'react'
-import { Button } from "@/components/ui/button"
-import Webcam from "react-webcam"
-import { Label } from "@/components/ui/label"
 import { Toggle } from "@/components/ui/toggle.jsx"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Camera} from "lucide-react"
 import NavBar from "../components/nav-bar.jsx"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import FrameDisplay from "../components/video-frame.jsx"
+import ResetButton from "../components/reset-button.jsx"
+import { Input } from '@/components/ui/input.jsx'
 
 export default function RepTracker() {
-  const videoRef = useRef(null)
   const [isCameraOn, setIsCameraOn] = useState(false)
+  const [workout, setWorkout] = useState("empty");
+  const [reps, setReps] = useState(5);
+  const [goalReps, setGoalReps] = useState(999999999);
+  const [concentric, setConcentric] = useState(true);
+  const [sets, setSets] = useState(0);
+  const [intervalId, setIntervalId] = useState(null); // Store the interval ID
+
   const videoConstraints = {
     facingMode: "user",
   };
   
-  const toggleCamera = async () => {
+  const toggleCamera = () => {
     if (isCameraOn) {
       setIsCameraOn(false)
     } else {
@@ -24,14 +31,60 @@ export default function RepTracker() {
     }
   }
 
+  const reset = () => {
+    setReps(0);
+    setSets(Math.max(sets - 1, 0));
+    setConcentric(true);
+
+    console.log("New reps: " + reps);
+  }
+
+  const workoutChosen = async (value) => {
+    setWorkout(value);
+  }
+
   useEffect(() => {
-    return () => {
-      if (isCameraOn) {
-        // const stream = videoRef.current?.srcObject
-        // stream?.getTracks().forEach(track => track.stop())
-      } 
+    // Clear the previous interval when workout changes or component unmounts
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
     }
-  }, [isCameraOn])
+
+    if (workout && workout !== 'empty') {
+      // Start a new interval when a workout is selected
+      const newIntervalId = setInterval(async () => {
+        try {
+          // Dynamically create the API endpoint based on the workout name
+          const response = await fetch(`http://127.0.0.1:5000/get${workout}`);
+          
+          // Assuming the response contains a JSON with an 'efficiency' field
+          
+          const data = await response.json();
+          console.log(data);
+          const efficiency = data.efficiency;
+
+          console.log(`Efficiency for ${workout}: ${efficiency}%`);
+
+          // Increment reps if efficiency reaches or exceeds 80%
+          if (efficiency >= 80) {
+            setReps(prevReps => prevReps + 1);
+          }
+        } catch (error) {
+          console.error("Error fetching efficiency:", error);
+        }
+      }, 2000); // Poll the API every 2 seconds (adjust as needed)
+
+      // Store the new interval ID so it can be cleared later
+      setIntervalId(newIntervalId);
+    }
+
+    // Cleanup function to clear the interval when component unmounts or workout changes
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [workout]); // Re-run the effect whenever workout changes
 
   return (
     <>
@@ -39,14 +92,7 @@ export default function RepTracker() {
         <main className="flex-grow flex w-screen">
             <div className="overflow-hidden w-3/4 bg-muted ml-4 flex items-center justify-center">
             {isCameraOn ? (
-                <Webcam
-                audio={false}
-                screenshotFormat="image/jpeg"
-                videoConstraints={videoConstraints}
-                style={{
-                    width:"1110px",
-                }}
-                />
+              <FrameDisplay />
             ) : (
                 <div className="text-center">
                 <Camera className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
@@ -58,21 +104,65 @@ export default function RepTracker() {
                 <Camera className="h-4 w-4 rounded-full" />
             </Toggle>
             <div className="w-1/4 bg-background px-4">
-            <ScrollArea className="h-[calc(100vh-5rem)] rounded-md border px-4 ">
+            <ScrollArea className="h-[calc(100vh-5rem)] border px-4 ">
                 <h2 className="text-lg font-semibold my-4">Information</h2>
-                <p className="mb-4">This is a scrollable area where you can display various information about the camera feed or any other relevant details.</p>
-                <p className="mb-4">You can add more content here, and it will become scrollable when it exceeds the height of the container.</p>
-                <p className="mb-4">Some features of this app:</p>
+                <p className="mb-4">Choose an exercise from the dropdown and begin doing reps.</p>
+                <p className="mb-4">Here are some tips before you get started!</p>
                 <ul className="list-disc pl-5 mb-4">
-                <li>Real-time camera feed display</li>
-                <li>Camera on/off toggle</li>
-                <li>Responsive layout</li>
-                <li>Scrollable information panel</li>
+                  <li>Focus on the stretched portion of the lift</li>
+                  <li>Lift close to or until failure of technique</li>
+                  <li>Always prioritize recovery!</li>
                 </ul>
-                <p className="mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                <p className="mb-4">Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+                <div className='flex justify-center'>
+                  <div className="w-[95%]">
+                    <Select onValueChange={workoutChosen}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Workout" />
+                      </SelectTrigger>
+                      <SelectContent>
+                      <SelectItem value="empty">Select Item</SelectItem>
+                        <SelectItem value="Curl">Curl</SelectItem>
+                        <SelectItem value="Squat">Squat</SelectItem>
+                        <SelectItem value="Pullup">Pullup</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <h2 className="text-lg font-semibold mt-[5rem] mb-4">Choose Exercise</h2>
+                {(workout !== "empty") ? (
+                  <>
+                    <p className='text-lg font-medium my-4'> {workout}</p>
+                    <div className="flex flex-row justify-center items-center mb-4">
+                      <div className="w-[45%]">
+                        <Input type="number" onChange={(val) => {setSets(Math.max(val.target.value, 0)); setReps(0);}} placeholder="Sets" />
+                      </div>
+                      <p className='px-2'>x</p>
+                      <div className="w-[45%]">
+                        <Input type="number" onChange={(val) => {setGoalReps(val.target.value)}} 
+                          placeholder="Reps" />
+                      </div>
+                    </div>
+                    <p className='mb-4'>{sets} more sets left!</p>
+                    <div className="mb-4 flex flex-row justify-between items-center">
+                      <p className="w-3/4">Your Reps</p>
+                      <p> {reps} </p>
+                      <ResetButton onClick={reset}/>
+                    </div> 
+                    {(reps >= goalReps || sets == 0) ? (
+                      <>
+                        <p className="text-green-500 mb-4"> You have reached your goal! Once you hit reset, your reps will reset and your sets will decrement. </p>
+                        <p className="text-green-500">If you have done all your sets, feel free to do another exercise.</p>
+                      </>
+                    ) : (
+                      <p> Keep going! You are almost at your goal!</p>
+                    )}
+                    
+                  </>
+                ) : (
+                    <p className='py-5'> Choose an option to get started!</p>
+                )}
             </ScrollArea>
+                
             </div>
         </main>
     </>
