@@ -55,7 +55,6 @@ class PoseLandmarker:
         return annotations
     
     # RETURNS CURL EFFICIENCY %
-    @app.route('/getCurl')
     def check_curl(self):
 
         min_angle = 30
@@ -98,7 +97,6 @@ class PoseLandmarker:
         return response
     
     # RETURNS SQUAT EFFICIENCY %
-    @app.route('/getSquat')
     def check_squat(self):
 
         min_angle = 70
@@ -141,7 +139,6 @@ class PoseLandmarker:
         return response
 
     # RETURNS PULLUP EFFICIENCY %
-    @app.route('/getPullup')
     def check_pullup(self):
 
         min_angle = 15
@@ -204,9 +201,21 @@ class PoseLandmarker:
         return math.sqrt((p2[1] - p1[1])**2 + (p2[2] - p1[2])**2)
 
 
-def load_frames():
+landmarker = PoseLandmarker()
 
-    landmarker = PoseLandmarker()
+@app.route('/getSquat')
+def get_squat():
+    return landmarker.check_squat()
+
+@app.route('/getPullup')
+def get_pullup():
+    return landmarker.check_pullup()
+
+@app.route('/getCurl')
+def get_curl():
+    return landmarker.check_curl()
+
+def load_frames():
 
     capture = cv.VideoCapture(0)
     while True:
