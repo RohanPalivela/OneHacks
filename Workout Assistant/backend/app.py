@@ -1,18 +1,11 @@
 import os
 import google.generativeai as genai
 from flask import Flask, request, jsonify
-from dotenv import load_dotenv, find_dotenv
 from utils import gemini_vision
 
-_ = load_dotenv(find_dotenv())
+genai.configure(api_key="AIzaSyB28qrLxCiUBnC5OeQ4Tnl8QDB6GwR4yeo")
 
-api_key = os.environ.get('API_KEY')
-
-if not api_key:
-    raise ValueError("API key not found!")
-genai.configure(api_key=api_key)
-
-multimodal_model = genai.GenerativeModel("gemini-1.5-flash")
+multimodal_model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 
 app = Flask(__name__)
@@ -20,18 +13,18 @@ app = Flask(__name__)
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    print("start")
     # Get data from the React app
-    breakfast = request.files['breakfast']
-    lunch = request.files['lunch']
-    dinner = request.files['dinner']
+    breakfast = request.files.get('breakfast')
+    lunch = request.files.get('lunch')
+    dinner = request.files.get('dinner')
     age = request.form.get('age')
     sex = request.form.get('sex')
-    goal = request.form.get('goal')
+    goals = request.form.get('goals')
     weight = request.form.get('weight')
     height = request.form.get('height')
     length = request.form.get('length')
-
-    print(age + " " + sex + " " + goal)
+    print("age is " + goals)
 
     # print_multimodal_prompt([breakfast,lunch,dinner])
 

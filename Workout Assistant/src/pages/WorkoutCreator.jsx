@@ -55,8 +55,8 @@ export default function WorkoutCreator() {
     formData.append('freeTime', freeTime);
     formData.append('goals', JSON.stringify(goals));
 
-    fetch("/predict", {
-    const response = await axios.post('http://localhost:5000/predict', formData, {
+    try {
+    const response = await axios.post('http://127.0.0.1:5000/predict', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
