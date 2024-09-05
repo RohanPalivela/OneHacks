@@ -16,7 +16,7 @@ export default function RepTracker() {
   const [reps, setReps] = useState(5);
   const [goalReps, setGoalReps] = useState(999999999);
   const [concentric, setConcentric] = useState(true);
-  const [sets, setSets] = useState(0);
+  const [sets, setSets] = useState(-1);
   const [intervalId, setIntervalId] = useState(null); // Store the interval ID
 
   const videoConstraints = {
@@ -41,6 +41,7 @@ export default function RepTracker() {
 
   const workoutChosen = async (value) => {
     setWorkout(value);
+    setReps(0);
   }
 
   useEffect(() => {
@@ -65,14 +66,23 @@ export default function RepTracker() {
 
           console.log(`Efficiency for ${workout}: ${efficiency}%`);
 
-          // Increment reps if efficiency reaches or exceeds 80%
-          if (efficiency >= 80) {
-            setReps(prevReps => prevReps + 1);
-          }
+          // Use functional state updates to ensure latest state
+          setConcentric(prevConcentric => {
+            if (efficiency >= 80 && prevConcentric) {
+              setReps(prevReps => prevReps + 1);
+              return false;
+            }
+
+            if (efficiency <= 20) {
+              return true;
+            }
+
+            return prevConcentric;
+          });
         } catch (error) {
           console.error("Error fetching efficiency:", error);
         }
-      }, 2000); // Poll the API every 2 seconds (adjust as needed)
+      }, 500); // Poll the API every 2 seconds (adjust as needed)
 
       // Store the new interval ID so it can be cleared later
       setIntervalId(newIntervalId);
@@ -142,7 +152,7 @@ export default function RepTracker() {
                           placeholder="Reps" />
                       </div>
                     </div>
-                    <p className='mb-4'>{sets} more sets left!</p>
+                    <p className='mb-4'>{Math.max(0, sets)} more sets left!</p>
                     <div className="mb-4 flex flex-row justify-between items-center">
                       <p className="w-3/4">Your Reps</p>
                       <p> {reps} </p>
