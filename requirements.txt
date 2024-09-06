@@ -1,4 +1,0 @@
-mediapipe
-flask
-python-dotenv
-google-generativeai
